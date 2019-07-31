@@ -1,4 +1,4 @@
-# android-scanner
+# Android-Scanner
 
 Android scanner widget using zbar decode，Of course you also can realize other decode engine
 

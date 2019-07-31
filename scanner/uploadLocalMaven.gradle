@@ -3,8 +3,8 @@ apply plugin: 'maven'
 
 def POM_NAME='scanner'
 def POM_VERSION='0.0.1'
-def POM_ARTIFACTID="scanner"//项目名称id
-def POM_GROUPID='io.vin.android'  //项目组id
+def POM_ARTIFACTID="scanner"
+def POM_GROUPID='io.vin.android'
 //包类型
 def POM_PACKAGING='aar'
 //描述

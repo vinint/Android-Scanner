@@ -1,4 +1,4 @@
-# android-scanner
+# Android-Scanner
 
 本扫描控件使用zbar解码,当然你也可以实现其他解码引擎
 
