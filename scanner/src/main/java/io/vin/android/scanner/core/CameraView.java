@@ -11,8 +11,8 @@ import io.vin.android.scanner.util.CameraUtils;
 
 
 public abstract class CameraView extends FrameLayout implements PreviewCallback {
-    private Camera mCamera;
-    private CameraPreview mPreview;
+    public Camera mCamera;
+    public CameraPreview mPreview;
 
     public CameraView(Context context) {
         super(context);

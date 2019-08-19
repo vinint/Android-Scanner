@@ -63,4 +63,4 @@ dependencies {
 apply from: 'uploadJcenter.gradle'
 
 //上传到内部maven
-//apply from: 'uploadLocalMavenMaven.gradle'
+//apply from: 'uploadLocalMaven.gradle'

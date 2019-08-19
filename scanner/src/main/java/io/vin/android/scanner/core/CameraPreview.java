@@ -96,7 +96,14 @@ public class CameraPreview extends SurfaceView implements Callback {
                 this.mCamera.setOneShotPreviewCallback(this.mPreviewCallback);
                 this.mCamera.startPreview();
                 if (this.mAutoFocus) {
-                    this.mCamera.autoFocus(this.autoFocusCB);
+                    try {
+                        this.mCamera.autoFocus(this.autoFocusCB);
+                    } catch (RuntimeException e) {
+                        // Horrible hack to deal with autofocus errors on Sony devices
+                        // See https://github.com/dm77/barcodescanner/issues/7 for example
+                        // wait 1 sec and then do check again
+                        this.mAutoFocusHandler.postDelayed(CameraPreview.this.doAutoFocus, autoFocusInterval);
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, e.toString(), e);
@@ -196,10 +203,18 @@ public class CameraPreview extends SurfaceView implements Callback {
         if (this.mCamera != null && this.mPreviewing && state != this.mAutoFocus) {
             this.mAutoFocus = state;
             if (this.mAutoFocus) {
-                Log.v(TAG, "Starting autofocus");
-                this.mCamera.autoFocus(this.autoFocusCB);
+                try {
+                    Log.v(TAG, "Starting autofocus");
+                    this.mCamera.autoFocus(this.autoFocusCB);
+                } catch (RuntimeException e) {
+                    // Horrible hack to deal with autofocus errors on Sony devices
+                    // See https://github.com/dm77/barcodescanner/issues/7 for example
+                    // wait 1 sec and then do check again
+                    mAutoFocusHandler.postDelayed(doAutoFocus,1000l);
+                }
                 return;
             }
+
             Log.v(TAG, "Cancelling autofocus");
             this.mCamera.cancelAutoFocus();
         }
