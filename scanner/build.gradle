@@ -3,7 +3,6 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion 28
 
-
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 28
@@ -32,9 +31,8 @@ dependencies {
     compileOnly project(':zbar')
 }
 
+//upload to internal maven
+//apply from: 'uploadInternalMaven.gradle'
 
-//上传到Jcenter
+//upload to Jcenter
 apply from: 'uploadJcenter.gradle'
-
-//上传到内部maven
-//apply from: 'uploadLocalMaven.gradle'

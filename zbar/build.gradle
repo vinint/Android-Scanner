@@ -58,9 +58,8 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
+//upload to internal maven
+//apply from: 'uploadInternalMaven.gradle'
 
-//上传到Jcenter
+//upload to Jcenter
 apply from: 'uploadJcenter.gradle'
-
-//上传到内部maven
-//apply from: 'uploadLocalMaven.gradle'
