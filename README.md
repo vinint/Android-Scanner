@@ -8,12 +8,12 @@ Android scanner widget using zbar decode，Of course you also can realize other 
 
 ### 1、Decode only with zbar
 
-Add dependencies:
+Add dependencies(Jcenter):
 
 * Gradle
 
   ```groovy
-  compile 'io.vin.android:zbar:1.0.1'
+  compile 'io.vin.android:zbar:1.0.2'
   ```
 
   
@@ -24,7 +24,7 @@ Add dependencies:
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>zbar</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <type>pom</type>
   </dependency>
   ```
@@ -70,8 +70,8 @@ Add dependencies:
 * Gradle
 
   ```java
-  compile 'io.vin.android:zbar:1.0.1'
-  compile 'io.vin.android:scanner:1.0.1'
+  compile 'io.vin.android:zbar:1.0.2'
+  compile 'io.vin.android:scanner:1.0.6'
   ```
 
   
@@ -82,14 +82,14 @@ Add dependencies:
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>zbar</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <type>pom</type>
   </dependency>
   
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>scanner</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.6</version>
     <type>pom</type>
   </dependency>
   ```

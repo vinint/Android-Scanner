@@ -6,12 +6,12 @@
 
 ### 1、仅使用zbar
 
-添加依赖：
+添加依赖（Jcenter）：
 
 * Gradle
 
   ```groovy
-  compile 'io.vin.android:zbar:1.0.1'
+  compile 'io.vin.android:zbar:1.0.2'
   ```
 
   
@@ -22,7 +22,7 @@
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>zbar</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <type>pom</type>
   </dependency>
   ```
@@ -68,8 +68,8 @@ defaultConfig {
 * Gradle
 
   ```java
-  compile 'io.vin.android:zbar:1.0.1'
-  compile 'io.vin.android:scanner:1.0.1'
+  compile 'io.vin.android:zbar:1.0.2'
+  compile 'io.vin.android:scanner:1.0.6'
   ```
 
   
@@ -80,14 +80,14 @@ defaultConfig {
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>zbar</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <type>pom</type>
   </dependency>
   
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>scanner</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.6</version>
     <type>pom</type>
   </dependency>
   ```
