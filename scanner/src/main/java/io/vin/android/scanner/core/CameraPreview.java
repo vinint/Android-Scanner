@@ -16,11 +16,16 @@ import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
+
 import java.util.List;
 
 import io.vin.android.scanner.util.DisplayUtils;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class CameraPreview extends SurfaceView implements Callback {
     private static final String TAG = "CameraPreview";
@@ -52,7 +57,7 @@ public class CameraPreview extends SurfaceView implements Callback {
     public void initCameraPreview() {
         if (this.mCamera != null) {
             getHolder().addCallback(this);
-            getHolder().setType(3);
+            getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
             if (this.mPreviewing) {
                 requestLayout();
             } else {
@@ -81,13 +86,17 @@ public class CameraPreview extends SurfaceView implements Callback {
         if (this.mCamera != null) {
             try {
                 LayoutParams params = getLayoutParams();
-                Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-                Point outSize = new Point();
-                if (VERSION.SDK_INT >= 13) {
-                    display.getSize(outSize);
-                }
-                params.width = outSize.x;
-                params.height = outSize.y;
+
+//                Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+//                Point outSize = new Point();
+//                if (VERSION.SDK_INT >= 13) {
+//                    display.getSize(outSize);
+//                }
+//                params.width = outSize.x;
+//                params.height = outSize.y;
+
+                params.width = MATCH_PARENT;
+                params.height = MATCH_PARENT;
                 setLayoutParams(params);
                 this.mPreviewing = true;
                 setupCameraParameters();
