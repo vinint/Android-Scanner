@@ -69,7 +69,7 @@ defaultConfig {
 
   ```java
   compile 'io.vin.android:zbar:1.0.2'
-  compile 'io.vin.android:scanner:1.0.6'
+  compile 'io.vin.android:scanner:1.0.7'
   ```
 
   
