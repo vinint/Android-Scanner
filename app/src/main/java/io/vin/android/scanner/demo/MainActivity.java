@@ -16,6 +16,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findViewById(R.id.btn_scan).setOnClickListener(this);
+        findViewById(R.id.btn_scan2).setOnClickListener(this);
     }
 
 
@@ -28,6 +29,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (granted) {
                             Intent intent = new Intent();
                             intent.setClass(MainActivity.this,ZbarScanTestActivity.class);
+                            startActivity(intent);
+                        } else {
+                            // Oups permission denied
+                        }
+                    });
+        }else if (v.getId() == R.id.btn_scan2){
+            rxPermissions
+                    .request(Manifest.permission.CAMERA)
+                    .subscribe(granted -> {
+                        if (granted) {
+                            Intent intent = new Intent();
+                            intent.setClass(MainActivity.this,Camera1TestActivity.class);
                             startActivity(intent);
                         } else {
                             // Oups permission denied

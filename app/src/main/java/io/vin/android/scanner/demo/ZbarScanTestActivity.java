@@ -60,7 +60,7 @@ public class ZbarScanTestActivity extends Activity  implements ScannerView.Singl
     @Override
     public void singleScan(Result data) {
         Log.d("新ZBAR测试",data.getSymbology() +" "+ data.getContents());
-        Toast.makeText(this,data.getContents() +" "+ data.getContents(),Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,data.getSymbology().getName() +":"+ data.getContents(),Toast.LENGTH_SHORT).show();
     }
 
     @Override

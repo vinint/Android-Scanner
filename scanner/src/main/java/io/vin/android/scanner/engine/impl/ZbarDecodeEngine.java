@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -32,6 +33,7 @@ import io.vin.android.zbar.Symbology;
 public class ZbarDecodeEngine implements DecodeEngine {
     private final WeakReference<Context> mContext;
     private final WeakReference<View> mView;
+    private WeakReference<View> mDecodeAreaView;
     private ImageScanner mDecoder;
     private List<Symbology> mSymbologyList;
     private Rect mDecodeUIRect;
@@ -130,6 +132,64 @@ public class ZbarDecodeEngine implements DecodeEngine {
         return ((info.orientation - degrees) + 360) % 360;
     }
 
+    private Rect calculateDecodeRect(View view){
+        Rect decodeArea = new Rect();
+
+        //1.通过getGlobalVisibleRect计算Rect
+        Rect cropRect = new Rect();
+        view.getGlobalVisibleRect(cropRect);
+
+        Rect scanerRect = new Rect();
+        mView.get().getGlobalVisibleRect(scanerRect);
+
+        if (cropRect.width() ==0 ||
+                cropRect.height()==0||
+                scanerRect.width() ==0||
+                scanerRect.height() ==0){
+            //若view未渲染,直接放弃计算
+            decodeArea = null;
+        }else {
+            // 矩形A中心点坐标
+            int aCenterX =(cropRect.left+cropRect.right)/2;
+            int aCenterY =(cropRect.top+cropRect.bottom)/2;
+
+            // 矩形B中心点坐标
+            int bCenterX = (scanerRect.left+scanerRect.right)/2;
+            int bCenterY = (scanerRect.top+scanerRect.bottom)/2;
+
+            // 两个中心点之间的宽高
+            int twoPointWidth = Math.abs(aCenterX-bCenterX);
+            int twoPointHeight = Math.abs(aCenterY-bCenterY);
+
+            if (twoPointWidth < (cropRect.width() + scanerRect.width()) / 2
+                    && twoPointHeight < (cropRect.height() + scanerRect.height()) / 2) {
+                //两个矩形相交
+                Rect intersectRect = new Rect();
+                intersectRect.left = Math.max(cropRect.left,scanerRect.left);
+                intersectRect.top = Math.max(cropRect.top,scanerRect.top);
+                intersectRect.right = Math.min(cropRect.right,scanerRect.right);
+                intersectRect.bottom = Math.min(cropRect.bottom,scanerRect.bottom);
+
+                //计算相交区域，相对于camera区域的相对坐标
+                decodeArea.left = intersectRect.left - scanerRect.left;
+                decodeArea.right = intersectRect.right - scanerRect.left;
+                decodeArea.top = intersectRect.top - scanerRect.top;
+                decodeArea.bottom = intersectRect.bottom - scanerRect.top;
+
+                Log.d("ZbarDecodeEngine","cropRect:"+cropRect.left+","+cropRect.top+","+cropRect.right+","+cropRect.bottom);
+                Log.d("ZbarDecodeEngine","scanerRect:"+scanerRect.left+","+scanerRect.top+","+scanerRect.right+","+scanerRect.bottom);
+                Log.d("ZbarDecodeEngine","intersectRect:"+intersectRect.left+","+intersectRect.top+","+intersectRect.right+","+intersectRect.bottom);
+                Log.d("ZbarDecodeEngine","decodeArea:"+decodeArea.left+","+decodeArea.top+","+decodeArea.right+","+decodeArea.bottom);
+
+            }else {
+                //两个矩形不相交
+                decodeArea = null;
+            }
+        }
+
+        return decodeArea;
+    }
+
     @Override
     public void enableCache(Boolean enable) {
         this.mDecoder.enableCache(true);
@@ -148,20 +208,7 @@ public class ZbarDecodeEngine implements DecodeEngine {
 
     @Override
     public void setDecodeRect(View view) {
-        Rect decodeArea = new Rect();
-
-        //1.通过getGlobalVisibleRect计算Rect
-        Rect cropRect = new Rect();
-        view.getGlobalVisibleRect(cropRect);
-
-        Rect scanerRect = new Rect();
-        mView.get().getGlobalVisibleRect(scanerRect);
-
-        decodeArea = cropRect;
-        decodeArea.top = cropRect.top - scanerRect.top;
-        decodeArea.bottom = cropRect.bottom - scanerRect.top;
-
-        setDecodeRect(decodeArea);
+        mDecodeAreaView = new WeakReference<>(view);
     }
 
     @Override
@@ -172,6 +219,10 @@ public class ZbarDecodeEngine implements DecodeEngine {
         Image image = new Image(width, height, "Y800");
         image.setData(data);
         //2.根据感应器旋转角度,屏幕旋转角度,和UI层面框大小.决定识别区域
+        if (mDecodeUIRect == null && mDecodeAreaView != null && mDecodeAreaView.get() != null) {
+            Rect decodeRect = calculateDecodeRect(mDecodeAreaView.get());
+            setDecodeRect(decodeRect);
+        }
         if (mDecodeUIRect != null) {
             Rect scaledRect = getScaledRect(mDecodeUIRect, width, height);
             Rect rotatedRect = getRotatedRect(scaledRect, width, height);
@@ -192,8 +243,10 @@ public class ZbarDecodeEngine implements DecodeEngine {
                 resultList.add(resultItem);
             }
         }
+        image.destroy();
         return resultList;
     }
+
 
 
 }

@@ -1,6 +1,7 @@
 package io.vin.android.scanner.util;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.os.Build.VERSION;
 import android.view.Display;
@@ -24,9 +25,9 @@ public class DisplayUtils {
             return 3;
         }
         if (display.getWidth() < display.getHeight()) {
-            return 1;
+            return Configuration.ORIENTATION_PORTRAIT;
         }
-        return 2;
+        return Configuration.ORIENTATION_LANDSCAPE;
     }
 
 }
