@@ -14,6 +14,7 @@ import java.util.List;
 
 import io.vin.android.scanner.Result;
 import io.vin.android.scanner.ScannerView2;
+import io.vin.android.scanner.core.Camera1View;
 import io.vin.android.zbar.Symbology;
 
 /**
@@ -21,7 +22,7 @@ import io.vin.android.zbar.Symbology;
  * Author     Vin
  * Mail       vinintg@gmail.com
  */
-public class Camera1TestActivity extends Activity implements View.OnClickListener,ScannerView2.SingleScanCallBack{
+public class Camera1TestActivity extends Activity implements View.OnClickListener,ScannerView2.SingleScanCallBack,ScannerView2.MultipleScanCallBack{
 
     ScannerView2 mScannerView;
     TextView mTvMsg;
@@ -32,7 +33,6 @@ public class Camera1TestActivity extends Activity implements View.OnClickListene
         setContentView(R.layout.activity_camera_test);
         mTvMsg = findViewById(R.id.tv_scan_data);
         mScannerView = findViewById(R.id.sv_camera);
-        mScannerView.setAutoFocus(true);
         findViewById(R.id.btn_take_picture).setOnClickListener(this);
         initScanner();
     }
@@ -42,16 +42,23 @@ public class Camera1TestActivity extends Activity implements View.OnClickListene
         formats.add(Symbology.CODE128);
         formats.add(Symbology.QRCODE);
         mScannerView.setSymbology(formats);
+        mScannerView.setParametersMode(Camera1View.PARAMETERS_MODE_AUTO);
         mScannerView.setAutoFocus(true);
         mScannerView.setAutoFocusInterval(1000l);
-        mScannerView.setSingleScanCallBack(this);
         mScannerView.setDecodeRect(findViewById(R.id.capture_crop_view));
+        mScannerView.setSingleScanCallBack(this);
+        mScannerView.setMultipleScanCallBack(this);
     }
 
     @Override
     public void singleScan(Result data) {
+        // 一帧相机数据解析后只取一个结果
         mTvMsg.setText(data.getContents());
-        Toast.makeText(this,data.getSymbology().getName() +":"+ data.getContents(),Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void multipleScan(List<Result> datas) {
+        // 一帧相机数据解析后所有结果
     }
 
     @Override

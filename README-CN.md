@@ -69,7 +69,7 @@ defaultConfig {
 
   ```java
   compile 'io.vin.android:zbar:1.0.2'
-  compile 'io.vin.android:scanner:1.0.7'
+  compile 'io.vin.android:scanner:1.0.8'
   ```
 
   
@@ -87,7 +87,7 @@ defaultConfig {
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>scanner</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.8</version>
     <type>pom</type>
   </dependency>
   ```
@@ -102,72 +102,57 @@ defaultConfig {
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <io.vin.android.scanner.ScannerView
+    <io.vin.android.scanner.ScannerView2
         android:id="@+id/zbar_scanner_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    </io.vin.android.scanner.ScannerView>
+    </io.vin.android.scanner.ScannerView2>
  </RelativeLayout>
 ```
 
 代码实现：
 
 ```java
-public class ZbarScanTestActivity extends Activity  implements ScannerView.SingleScanCallBack , ScannerView.MultipleScanCallBack{
-    private ScannerView mZBarScannerView;
+public class Camera1TestActivity extends Activity implements View.OnClickListener,
+ScannerView2.SingleScanCallBack,ScannerView2.MultipleScanCallBack{
+
+    ScannerView2 mScannerView;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zbar_scan_test);
-        mZBarScannerView = findViewById(R.id.zbar_scanner_view);
+        setContentView(R.layout.activity_camera_test);
+        mScannerView = findViewById(R.id.sv_camera);
         initScanner();
-
-    }
-
-    @Override
-    protected void onResume() {
-        mZBarScannerView.startCamera();
-        mZBarScannerView.startScan();
-        mZBarScannerView.setSingleScanCallBack(this);
-        mZBarScannerView.setMultipleScanCallBack(this); 
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        //必须在这里调用，否则相机不能正常释放。
-        mZBarScannerView.stopCamera();
-        mZBarScannerView.stopScan();
-        mZBarScannerView.removeSingleScanCallBack();
-        mZBarScannerView.removeMultipleScanCallBack();
-        super.onPause();
-    }
-
-    @Override
-    public void singleScan(Result data) {
-      // 一帧相机数据解析后只取一个结果
-        Log.d("",data.getSymbology() +" "+ data.getContents());
-        Toast.makeText(this,data.getContents() +" "+ data.getContents(),Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void multipleScan(List<Result> datas) {
-      // 一帧相机数据解析后所有结果
-        for (Result item :datas){
-            Log.d("",item.getContents());
-        }
-
     }
 
     private void initScanner(){
         List<Symbology> formats = new ArrayList<>();
         formats.add(Symbology.CODE128);
         formats.add(Symbology.QRCODE);
-        formats.add(Symbology.CODE39);
-        mZBarScannerView.setSymbology(formats);
-        mZBarScannerView.setAutoFocus(true);
-        mZBarScannerView.setAutoFocusInterval(500l);
+      	//设置支持的符号
+        mScannerView.setSymbology(formats);
+      	//设置相机参数模式
+        mScannerView.setParametersMode(Camera1View.PARAMETERS_MODE_AUTO);
+      	//设置自动对焦
+        mScannerView.setAutoFocus(true);
+        mScannerView.setAutoFocusInterval(1000l);
+      	//设置解码区域
+        mScannerView.setDecodeRect(findViewById(R.id.capture_crop_view));
+      	//设置解码回调（单个）
+        mScannerView.setSingleScanCallBack(this);
+      	//设置解码回调（多个）
+        mScannerView.setMultipleScanCallBack(this);
+    }
 
+    @Override
+    public void singleScan(Result data) {
+        // 一帧相机数据解析后只取一个结果
+    }
+
+    @Override
+    public void multipleScan(List<Result> datas) {
+        // 一帧相机数据解析后所有结果
     }
 }
 ```
