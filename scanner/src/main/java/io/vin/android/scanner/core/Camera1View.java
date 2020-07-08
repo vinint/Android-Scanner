@@ -259,12 +259,12 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 mCamera.addCallbackBuffer(new byte[bufferSize]);
                 // set Preview Callback
                 mCamera.setPreviewCallbackWithBuffer((byte[] data, Camera camera) -> {
-                    // 回收缓存
-                    mCamera.addCallbackBuffer(data);
                     // 交给业务层处理
                     if (mPreviewCallback != null) {
                         mPreviewCallback.onPreviewFrame(data, camera);
                     }
+                    // 回收缓存
+                    mCamera.addCallbackBuffer(data);
                 });
 
             } catch (Exception e) {
