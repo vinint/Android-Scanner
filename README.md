@@ -71,7 +71,7 @@ Add dependencies:
 
   ```java
   compile 'io.vin.android:zbar:1.0.2'
-  compile 'io.vin.android:scanner:1.0.8'
+  compile 'io.vin.android:scanner:1.0.11'
   ```
 
   
@@ -89,7 +89,7 @@ Add dependencies:
   <dependency>
     <groupId>io.vin.android</groupId>
     <artifactId>scanner</artifactId>
-    <version>1.0.8</version>
+    <version>1.0.11</version>
     <type>pom</type>
   </dependency>
   ```

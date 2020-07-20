@@ -3,6 +3,7 @@ package io.vin.android.scanner.core;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.os.Build;
@@ -17,6 +18,8 @@ import android.view.WindowManager;
 
 import java.util.List;
 
+
+import io.vin.android.scanner.util.DisplayUtils;
 
 import static android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
 
@@ -81,7 +84,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     private long mAutoFocusInterval = 1000l;
     private boolean mSupportFocusModeContinuousPicture = false;
     private Handler mAutoFocusHandler;
-
+    private float mAspectTolerance = 0.1f;
     // endregion
 
     private void initCamera() {
@@ -224,18 +227,18 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 // 2.设置预览旋转角度
                 mCamera.setDisplayOrientation(getDisplayOrientation(getContext(), mCameraId));
                 // 3.设置相机参数
-                if (mParametersCallback!=null){
-                    if (mParametersMode == PARAMETERS_MODE_FULL_MANUAL){
+                if (mParametersCallback != null) {
+                    if (mParametersMode == PARAMETERS_MODE_FULL_MANUAL) {
                         mParametersCallback.setParameters(mCamera);
-                    }else if(mParametersMode == PARAMETERS_MODE_SEMI_AUTO){
+                    } else if (mParametersMode == PARAMETERS_MODE_SEMI_AUTO) {
                         mParametersCallback.setParameters(mCamera);
                         defultParameters(mCamera);
-                    }else if (mParametersMode == PARAMETERS_MODE_AUTO){
+                    } else if (mParametersMode == PARAMETERS_MODE_AUTO) {
                         defultParameters(mCamera);
-                    }else {
+                    } else {
                         defultParameters(mCamera);
                     }
-                }else {
+                } else {
                     defultParameters(mCamera);
                 }
 
@@ -331,7 +334,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
      * Author     Vin
      * Mail       vinintg@gmail.com
      */
-    public void setParametersMode(int mode){
+    public void setParametersMode(int mode) {
         this.mParametersMode = mode;
     }
 
@@ -368,20 +371,20 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
      * Mail       vinintg@gmail.com
      */
     public void takePicture(Camera.ShutterCallback shutter, Camera.PictureCallback raw, Camera.PictureCallback jpeg) {
-        if (isCameraAvailable()){
+        if (isCameraAvailable()) {
             try {
-                mCamera.takePicture(shutter, raw, (byte[] data, Camera camera)-> {
+                mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
                     // 立刻取消自动对焦
                     boolean tmpAutoFocus = mAutoFocus;
                     setAutoFocus(false);
                     // 业务层获取图片数据
-                    jpeg.onPictureTaken(data,camera);
+                    jpeg.onPictureTaken(data, camera);
                     // 重新预览
                     mCamera.startPreview();
                     // 重新恢复自动对焦
                     setAutoFocus(tmpAutoFocus);
                 });
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -470,7 +473,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
             if (mAutoFocusHandler == null) {
                 mAutoFocusHandler = new Handler();
             }
-            if (isCameraAvailable()&& !supportFocusModeContinuousPicture(mCamera)) {
+            if (isCameraAvailable() && !supportFocusModeContinuousPicture(mCamera)) {
                 scheduleAutoFocus();
             }
 
@@ -590,7 +593,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
         return true;
     }
 
-    private void defultParameters(Camera camera){
+    private void defultParameters(Camera camera) {
 
         Camera.Parameters parameters = camera.getParameters();
         // a.预览图片格式
@@ -608,7 +611,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
             parameters.setPreviewFormat(ImageFormat.NV21);
         }
         // b.预览图片大小
-        Camera.Size optimalPreviewSize = getOptimalPreviewSize(parameters.getSupportedPreviewSizes(), getWidth(), getHeight());
+        Camera.Size optimalPreviewSize = getOptimalPreviewSize2(parameters.getSupportedPreviewSizes(), getWidth(), getHeight());
         parameters.setPreviewSize(optimalPreviewSize.width, optimalPreviewSize.height);
 
 
@@ -734,6 +737,53 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         Log.d(TAG, "OptimalPreviewSize: " + optimalSize.width + "x" + optimalSize.height);
+        return optimalSize;
+    }
+
+
+    private Camera.Size getOptimalPreviewSize2(List<Camera.Size> sizes, int viewWidth, int viewHeight) {
+        int w = getWidth();
+        int h = getHeight();
+        if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
+            int portraitWidth = h;
+            h = w;
+            w = portraitWidth;
+        }
+
+        double targetRatio = (double) w / h;
+        if (sizes == null) return null;
+
+        Camera.Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        // Try to find an size match aspect ratio and size
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > mAspectTolerance) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        if (optimalSize != null) {
+            if (targetHeight - optimalSize.height * 3 > 0) {
+                optimalSize = null;
+            }
+        }
+
+        // Cannot find the one match the aspect ratio, ignore the requirement
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
         return optimalSize;
     }
 
