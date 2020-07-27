@@ -84,7 +84,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     private long mAutoFocusInterval = 1000l;
     private boolean mSupportFocusModeContinuousPicture = false;
     private Handler mAutoFocusHandler;
-    private float mAspectTolerance = 0.1f;
+    private float mAspectTolerance = 0.2f;
     // endregion
 
     private void initCamera() {
@@ -769,7 +769,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         if (optimalSize != null) {
-            if (targetHeight - optimalSize.height * 3 > 0) {
+            if (targetHeight - optimalSize.height * 2 > 0) {
                 optimalSize = null;
             }
         }
