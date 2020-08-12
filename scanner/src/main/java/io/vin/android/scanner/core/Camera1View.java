@@ -242,17 +242,19 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                     defultParameters(mCamera);
                 }
 
-                // 4.开始预览 start preview
+                // 4.设置连续对焦
+                supportFocusModeContinuousPicture(mCamera);
+                // 5.开始预览 start preview
                 mCamera.startPreview();
-
-                // 5.设置对焦模式
-                if (mAutoFocus && !supportFocusModeContinuousPicture(mCamera)) {
+                // 6.防止连续对焦不生效
+                mCamera.cancelAutoFocus();
+                // 7.若不只支持FOCUS_MODE_CONTINUOUS_PICTURE模式则，调用autoFocus
+                if (mAutoFocus && !mSupportFocusModeContinuousPicture) {
                     // 走手动定期调用对焦实现
                     scheduleAutoFocus();
                 }
 
-
-                // 5.设置预览回调
+                // 8.设置预览回调
                 // 计算当前预览模式下接收预览图片byte[]的大小
                 Camera.Parameters parameters = mCamera.getParameters();
                 int previewWidth = parameters.getPreviewSize().width;
@@ -545,21 +547,22 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
      */
     private boolean supportFocusModeContinuousPicture(Camera camera) {
         mSupportFocusModeContinuousPicture = false;
-        return mSupportFocusModeContinuousPicture;
-//        Camera.Parameters parameters = camera.getParameters();
-//        if (parameters.getSupportedFocusModes().contains(FOCUS_MODE_CONTINUOUS_PICTURE)) {
-//            try {
-//                mCamera.cancelAutoFocus();
-//                parameters.setFocusMode(FOCUS_MODE_CONTINUOUS_PICTURE);
-//                mCamera.setParameters(parameters);
-//                mSupportFocusModeContinuousPicture = true;
-//            } catch (Exception ex) {
-//                mSupportFocusModeContinuousPicture = false;
-//            }
-//        } else {
-//            mSupportFocusModeContinuousPicture = false;
-//        }
+
 //        return mSupportFocusModeContinuousPicture;
+        Camera.Parameters parameters = camera.getParameters();
+        if (parameters.getSupportedFocusModes().contains(FOCUS_MODE_CONTINUOUS_PICTURE)) {
+            try {
+                mCamera.cancelAutoFocus();
+                parameters.setFocusMode(FOCUS_MODE_CONTINUOUS_PICTURE);
+                mCamera.setParameters(parameters);
+                mSupportFocusModeContinuousPicture = true;
+            } catch (Exception ex) {
+                mSupportFocusModeContinuousPicture = false;
+            }
+        } else {
+            mSupportFocusModeContinuousPicture = false;
+        }
+        return mSupportFocusModeContinuousPicture;
     }
 
     private boolean isCameraAvailable() {
