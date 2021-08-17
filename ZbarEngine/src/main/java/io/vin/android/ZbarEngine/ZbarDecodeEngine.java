@@ -1,4 +1,4 @@
-package io.vin.android.scanner.engine.impl;
+package io.vin.android.ZbarEngine;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -13,23 +13,16 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.vin.android.scanner.Result;
-import io.vin.android.scanner.engine.DecodeEngine;
-import io.vin.android.scanner.util.DisplayUtils;
 import io.vin.android.zbar.Config;
 import io.vin.android.zbar.Image;
 import io.vin.android.zbar.ImageScanner;
 import io.vin.android.zbar.Symbol;
 import io.vin.android.zbar.SymbolSet;
-import io.vin.android.zbar.Symbology;
+import io.vin.android.DecodeProtocol.DecodeEngine;
+import io.vin.android.DecodeProtocol.Result;
+import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 
-/**
- * Zbar Decode Engine
- *Author     Vin
- *Mail       vinintg@gmail.com
- *Createtime 2019-07-26 14:25
- *Modifytime 2019-07-26 14:25
- */
 public class ZbarDecodeEngine implements DecodeEngine {
     private final WeakReference<Context> mContext;
     private final WeakReference<View> mView;
@@ -37,6 +30,7 @@ public class ZbarDecodeEngine implements DecodeEngine {
     private ImageScanner mDecoder;
     private List<Symbology> mSymbologyList;
     private Rect mDecodeUIRect;
+    private volatile boolean isDecoding = false;
     public ZbarDecodeEngine(Context context,View view){
         this.mContext = new WeakReference<>(context);
         this.mView = new WeakReference<>(view);
@@ -202,8 +196,8 @@ public class ZbarDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public void setDecodeRect(Rect decodeRect) {
-        this.mDecodeUIRect = decodeRect;
+    public void setDecodeRect(Rect decodeViewRect) {
+        this.mDecodeUIRect = decodeViewRect;
     }
 
     @Override
@@ -212,7 +206,7 @@ public class ZbarDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public List<Result> decode(byte[] data, Camera camera) {
+    public List<Result> decode(byte[] data, Camera camera,int cameraID) {
         Camera.Size size = camera.getParameters().getPreviewSize();
         int width = size.width;
         int height = size.height;
@@ -237,7 +231,9 @@ public class ZbarDecodeEngine implements DecodeEngine {
                 if (TextUtils.isEmpty(symbolItem.getData())) {
                     continue;
                 }
+                int[] bounds = symbolItem.getBounds();
                 Result resultItem = new Result();
+                resultItem.setRect(new Rect(bounds[0],bounds[1], bounds[2], bounds[3]));
                 resultItem.setContents(symbolItem.getData());
                 resultItem.setSymbology(Symbology.getFormatById(symbolItem.getType()));
                 resultList.add(resultItem);
@@ -247,6 +243,9 @@ public class ZbarDecodeEngine implements DecodeEngine {
         return resultList;
     }
 
-
-
+    @Override
+    public void decode(byte[] data, Camera camera, int cameraID, DecodeCallback callback)
+    {
+        callback.onDecodeCallback(decode(data,camera,cameraID));
+    }
 }

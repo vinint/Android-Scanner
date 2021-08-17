@@ -1,4 +1,4 @@
-package io.vin.android.scanner.util;
+package io.vin.android.DecodeProtocol.utils;
 
 import android.content.Context;
 import android.content.res.Configuration;

@@ -163,7 +163,7 @@ ScannerView2.SingleScanCallBack,ScannerView2.MultipleScanCallBack{
 
 ## Custom decode Engine
 
-If you are not satisfied with zbar decoding, you can initialize  the "io.vin.android.scanner.engine.DecodeEngine" interface.Then set the following code.
+If you are not satisfied with zbar decoding, you can initialize  the "io.vin.android.decodeprotocol.DecodeEngine" interface.Then set the following code.
 
 ```java
 mZBarScannerView.setDecoderEngine(engine);

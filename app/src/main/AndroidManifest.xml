@@ -18,10 +18,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ZbarScanTestActivity">
-        </activity>
-        <activity android:name=".Camera1TestActivity">
-        </activity>
+        <activity android:name=".ZbarScanTestActivity"/>
+        <activity android:name=".ZbarScanActivity"/>
+        <activity android:name=".MLKitScanActivity"/>
+        <activity android:name=".HuaweiScanActivity"/>
     </application>
 
 </manifest>

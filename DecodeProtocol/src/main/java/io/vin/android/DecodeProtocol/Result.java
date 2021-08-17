@@ -1,10 +1,12 @@
-package io.vin.android.scanner;
+package io.vin.android.DecodeProtocol;
 
-import io.vin.android.zbar.Symbology;
+
+import android.graphics.Rect;
 
 public class Result {
     private Symbology mSymbology;
     private String mContents;
+    private Rect mRect;
 
     public void setContents(String contents) {
         this.mContents = contents;
@@ -20,5 +22,13 @@ public class Result {
 
     public String getContents() {
         return this.mContents;
+    }
+
+    public Rect getRect() {
+        return mRect;
+    }
+
+    public void setRect(Rect mRect) {
+        this.mRect = mRect;
     }
 }

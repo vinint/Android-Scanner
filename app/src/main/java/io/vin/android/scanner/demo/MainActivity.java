@@ -2,7 +2,7 @@ package io.vin.android.scanner.demo;
 
 import android.Manifest;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
@@ -15,32 +15,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        findViewById(R.id.btn_scan).setOnClickListener(this);
-        findViewById(R.id.btn_scan2).setOnClickListener(this);
+        findViewById(R.id.btn_zbar_scan).setOnClickListener(this);
+        findViewById(R.id.btn_mlkit_scan).setOnClickListener(this);
+        findViewById(R.id.btn_huawei_scan).setOnClickListener(this);
     }
 
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.btn_scan){
+        int id = v.getId();
+        if (id == R.id.btn_zbar_scan){
             rxPermissions
                     .request(Manifest.permission.CAMERA)
                     .subscribe(granted -> {
                         if (granted) {
                             Intent intent = new Intent();
-                            intent.setClass(MainActivity.this,ZbarScanTestActivity.class);
+                            intent.setClass(MainActivity.this, ZbarScanActivity.class);
                             startActivity(intent);
                         } else {
                             // Oups permission denied
                         }
                     });
-        }else if (v.getId() == R.id.btn_scan2){
+        }else if (id == R.id.btn_mlkit_scan){
             rxPermissions
                     .request(Manifest.permission.CAMERA)
                     .subscribe(granted -> {
                         if (granted) {
                             Intent intent = new Intent();
-                            intent.setClass(MainActivity.this,Camera1TestActivity.class);
+                            intent.setClass(MainActivity.this, MLKitScanActivity.class);
+                            startActivity(intent);
+                        } else {
+                            // Oups permission denied
+                        }
+                    });
+
+        }else if (id == R.id.btn_huawei_scan){
+            rxPermissions
+                    .request(Manifest.permission.CAMERA)
+                    .subscribe(granted -> {
+                        if (granted) {
+                            Intent intent = new Intent();
+                            intent.setClass(MainActivity.this, HuaweiScanActivity.class);
                             startActivity(intent);
                         } else {
                             // Oups permission denied

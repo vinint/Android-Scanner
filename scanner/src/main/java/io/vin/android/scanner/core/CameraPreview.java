@@ -8,22 +8,19 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
-import android.os.Build.VERSION;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
+import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 
 import java.util.List;
 
-import io.vin.android.scanner.util.DisplayUtils;
+
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 

@@ -9,10 +9,11 @@ import android.view.View;
 
 import java.util.List;
 
+import io.vin.android.ZbarEngine.ZbarDecodeEngine;
+import io.vin.android.DecodeProtocol.DecodeEngine;
+import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.DecodeProtocol.Result;
 import io.vin.android.scanner.core.Camera1View;
-import io.vin.android.scanner.engine.DecodeEngine;
-import io.vin.android.scanner.engine.impl.ZbarDecodeEngine;
-import io.vin.android.zbar.Symbology;
 
 public class ScannerView2 extends Camera1View {
     public ScannerView2(Context context) {
@@ -78,23 +79,25 @@ public class ScannerView2 extends Camera1View {
         if (!this.canScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
             return;
         }
-        List<Result> resultList = mDecodeEngine.decode(data, camera);
-        if (!resultList.isEmpty()) {
-            if (mSingleScanCallBack != null) {
-                mSingleScanCallBack.singleScan(resultList.get(0));
-            }
-            if (mMultipleScanCallBack != null) {
-                mMultipleScanCallBack.multipleScan(resultList);
-            }
+        mDecodeEngine.decode(data, camera,getCameraID(),v->{
+            List<Result> resultList = v;
+            if (resultList != null && !resultList.isEmpty()) {
+                if (mSingleScanCallBack != null) {
+                    mSingleScanCallBack.singleScan(resultList.get(0));
+                }
+                if (mMultipleScanCallBack != null) {
+                    mMultipleScanCallBack.multipleScan(resultList);
+                }
 
-            if (canVibrate) {
-                long nowTime = System.currentTimeMillis();
-                if (nowTime - this.lastScanTime > 2000) {
-                    this.mVibrator.vibrate(200);
-                    this.lastScanTime = nowTime;
+                if (canVibrate) {
+                    long nowTime = System.currentTimeMillis();
+                    if (nowTime - this.lastScanTime > 2000) {
+                        this.mVibrator.vibrate(200);
+                        this.lastScanTime = nowTime;
+                    }
                 }
             }
-        }
+        });
 
     }
 

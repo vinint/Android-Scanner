@@ -15,10 +15,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.vin.android.scanner.demo.R;
-import io.vin.android.scanner.Result;
+import io.vin.android.DecodeProtocol.Result;
+import io.vin.android.DecodeProtocol.Symbology;
 import io.vin.android.scanner.ScannerView;
-import io.vin.android.zbar.Symbology;
 
 public class ZbarScanTestActivity extends Activity  implements ScannerView.SingleScanCallBack , ScannerView.MultipleScanCallBack{
 

@@ -15,11 +15,9 @@ import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
-
+import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 import java.util.List;
 
-
-import io.vin.android.scanner.util.DisplayUtils;
 
 import static android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
 
@@ -294,6 +292,18 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     // region public Camera api
+
+    /**
+     * Method     getCameraID
+     * 获取CameraID
+     * Parameters []
+     * Return     android.hardware.Camera
+     * Author     Vin
+     * Mail       vinintg@gmail.com
+     */
+    public int getCameraID() {
+        return mCameraId;
+    }
 
     /**
      * Method     getCamera

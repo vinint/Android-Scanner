@@ -20,4 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.vin.android.scanner.* {*;}
+-keep class io.vin.android.scanner.** {*;}

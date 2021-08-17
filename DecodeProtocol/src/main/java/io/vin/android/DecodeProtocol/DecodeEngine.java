@@ -1,12 +1,10 @@
-package io.vin.android.scanner.engine;
+package io.vin.android.DecodeProtocol;
 
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.view.View;
 
 import java.util.List;
-import io.vin.android.scanner.Result;
-import io.vin.android.zbar.Symbology;
 
 /**
  *decode engine interface
@@ -49,14 +47,14 @@ public interface DecodeEngine {
     /**
      *Method     setDecodeRect
      * setting the area which need to decode
-     *Parameters [decodeRect]
+     *Parameters [decodeViewRect]
      *Return     void
      *Author     Vin
      *Mail       vinintg@gmail.com
      *Createtime 2019-07-26 14:13
      *Modifytime 2019-07-26 14:13
      */
-    void setDecodeRect(Rect decodeRect);
+    void setDecodeRect(Rect decodeViewRect);
 
     /**
      *Method     setDecodeRect
@@ -71,7 +69,7 @@ public interface DecodeEngine {
     void setDecodeRect(View view);
 
     /**
-     *Method     decode
+     *Method     decode 后续要废弃
      * decode camera frames data
      *Parameters [data, camera]
      *Return     java.util.List<io.vin.android.scanner.Result>
@@ -80,7 +78,13 @@ public interface DecodeEngine {
      *Createtime 2019-07-26 14:13
      *Modifytime 2019-07-26 14:13
      */
-    List<Result> decode(byte[] data, Camera camera);
+    List<Result> decode(byte[] data, Camera camera,int cameraID);
+
+    void decode(byte[] data, Camera camera,int cameraID,DecodeCallback callback);
+
+    public interface DecodeCallback{
+        void onDecodeCallback(List<Result> resultList);
+    }
 }
 
 

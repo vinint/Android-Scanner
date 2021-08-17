@@ -6,13 +6,14 @@ import android.hardware.Camera;
 import android.os.Vibrator;
 import android.util.AttributeSet;
 import android.view.View;
-
+import io.vin.android.DecodeProtocol.DecodeEngine;
+import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.DecodeProtocol.Result;
 import java.util.List;
 
+import io.vin.android.ZbarEngine.ZbarDecodeEngine;
 import io.vin.android.scanner.core.CameraView;
-import io.vin.android.scanner.engine.DecodeEngine;
-import io.vin.android.scanner.engine.impl.ZbarDecodeEngine;
-import io.vin.android.zbar.Symbology;
+
 
 public class ScannerView extends CameraView {
     private static final String TAG = ScannerView.class.getSimpleName();
@@ -51,8 +52,8 @@ public class ScannerView extends CameraView {
         if (!this.canScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
             return;
         }
-        List<Result> resultList = mDecodeEngine.decode(data, camera);
-        if (!resultList.isEmpty()) {
+        List<Result> resultList = mDecodeEngine.decode(data, camera,getCameraID());
+        if (resultList != null && !resultList.isEmpty()) {
             if (mSingleScanCallBack != null) {
                 mSingleScanCallBack.singleScan(resultList.get(0));
             }

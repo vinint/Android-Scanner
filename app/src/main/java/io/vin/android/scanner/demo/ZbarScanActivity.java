@@ -3,26 +3,25 @@ package io.vin.android.scanner.demo;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import io.vin.android.scanner.Result;
+import io.vin.android.DecodeProtocol.Result;
+import io.vin.android.DecodeProtocol.Symbology;
 import io.vin.android.scanner.ScannerView2;
 import io.vin.android.scanner.core.Camera1View;
-import io.vin.android.zbar.Symbology;
+
 
 /**
  * 使用重新封装的ScannerView2
  * Author     Vin
  * Mail       vinintg@gmail.com
  */
-public class Camera1TestActivity extends Activity implements View.OnClickListener,ScannerView2.SingleScanCallBack,ScannerView2.MultipleScanCallBack{
+public class ZbarScanActivity extends Activity implements View.OnClickListener,ScannerView2.SingleScanCallBack,ScannerView2.MultipleScanCallBack{
 
     ScannerView2 mScannerView;
     TextView mTvMsg;

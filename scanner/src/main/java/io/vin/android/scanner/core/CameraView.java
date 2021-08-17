@@ -13,6 +13,7 @@ import io.vin.android.scanner.util.CameraUtils;
 public abstract class CameraView extends FrameLayout implements PreviewCallback {
     public Camera mCamera;
     public CameraPreview mPreview;
+    private int mCameraId = 0;
 
     public CameraView(Context context) {
         super(context);
@@ -27,6 +28,10 @@ public abstract class CameraView extends FrameLayout implements PreviewCallback 
     public void setupLayout(Context context, AttributeSet attributeSet) {
         this.mPreview = new CameraPreview(context);
         addView(this.mPreview);
+    }
+
+    public int getCameraID() {
+        return mCameraId;
     }
 
     public void startCamera() {
