@@ -7,6 +7,7 @@ public class Result {
     private Symbology mSymbology;
     private String mContents;
     private Rect mRect;
+    public int mSort = 0;
 
     public void setContents(String contents) {
         this.mContents = contents;

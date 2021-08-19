@@ -1,14 +1,14 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion 30
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-
+        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
@@ -32,7 +32,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 
-    api 'io.vin.android:DecodeProtocol:1.0.0'
+    api 'io.vin.android:DecodeProtocol:1.0.1'
     implementation 'io.vin.android:ZbarEngine:1.0.0'
 }
 
