@@ -38,7 +38,8 @@ public class MLKitDecodeEngine implements DecodeEngine {
     private int previewHeight = -1;
     private int displayOrientation = 0;
     // 最终相对于预览图片的矩形框
-    private Rect mDecodeRect;
+    private Rect mDecodeRect;//与预览图片旋转保持同步
+    private Rect mScaledRect;
     //支持条码、二维码的格式
     private List<Symbology> mSymbologyList;
     //解码结果
@@ -77,7 +78,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
             this.previewHeight = camera.getParameters().getPreviewSize().height;
             this.displayOrientation = getDisplayOrientation(0);
             //计算相对于预览图片的解码区域
-            mDecodeRect = getFinalDecodeRect(mView.get());
+            mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
         }
         InputImage image = InputImage.fromByteArray(
                 data,
@@ -95,11 +96,11 @@ public class MLKitDecodeEngine implements DecodeEngine {
         }
         mScanResultList.clear();
         for (Barcode item : barcodeList) {
-//            if (containsRect(item.getBoundingBox(), mDecodeRect)) {
+            if (containsRect(item.getBoundingBox(), mScaledRect)) {
             Result resultItem = new Result();
             resultItem.setContents(item.getRawValue());
             mScanResultList.add(resultItem);
-//            }
+            }
         }
         return mScanResultList;
     }
@@ -112,7 +113,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
             this.previewHeight = camera.getParameters().getPreviewSize().height;
             this.displayOrientation = getDisplayOrientation(0);
             //计算相对于预览图片的解码区域
-            mDecodeRect = getFinalDecodeRect(mView.get());
+            mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
         }
 
         if (!isDecoding) {
@@ -135,9 +136,9 @@ public class MLKitDecodeEngine implements DecodeEngine {
                         }
                         mScanResultList.clear();
                         for (Barcode item : barcodeList) {
-                            if (containsRect(item.getBoundingBox(), mDecodeRect)) {
+                            if (containsRect(item.getBoundingBox(), mScaledRect)) {
                                 Result resultItem = new Result();
-                                resultItem.setContents(item.getRawValue());
+                                resultItem.setContents(item.getDisplayValue());
                                 resultItem.setRect(item.getBoundingBox());
                                 resultItem.setSymbology(barcode2Symbology(item.getFormat()));
                                 mScanResultList.add(resultItem);
@@ -163,10 +164,10 @@ public class MLKitDecodeEngine implements DecodeEngine {
     }
 
     private boolean containsRect(Rect child, Rect parent) {
-        if (child.top > parent.top &&
-                child.left > parent.left &&
-                parent.bottom > child.bottom &&
-                parent.right > child.right) {
+        if (child.top >= parent.top &&
+                child.left >= parent.left &&
+                parent.bottom >= child.bottom &&
+                parent.right >= child.right) {
             return true;
         }
         return false;
@@ -176,50 +177,74 @@ public class MLKitDecodeEngine implements DecodeEngine {
         int[] barcodeArray = new int[symbologyList.size()];
         for (int i = 0; i < symbologyList.size(); i++) {
             Symbology oldItem = symbologyList.get(i);
-            barcodeArray[i] = Barcode.FORMAT_CODE_128;
-            if (Symbology.PARTIAL.equals(oldItem)) {
-            } else if (Symbology.EAN8.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_EAN_8;
-            } else if (Symbology.UPCE.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_UPC_E;
-            } else if (Symbology.ISBN10.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_EAN_13;
-            } else if (Symbology.UPCA.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_UPC_A;
-            } else if (Symbology.EAN13.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_EAN_13;
-            } else if (Symbology.ISBN13.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_EAN_13;
-            } else if (Symbology.I25.equals(oldItem)) {
-            } else if (Symbology.DATABAR.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_DATA_MATRIX;
-            } else if (Symbology.DATABAR_EXP.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_DATA_MATRIX;
-            } else if (Symbology.CODABAR.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_CODABAR;
-            } else if (Symbology.CODE39.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_CODE_39;
-            } else if (Symbology.PDF417.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_PDF417;
-            } else if (Symbology.QRCODE.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_QR_CODE;
-            } else if (Symbology.CODE93.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_CODE_93;
-            } else if (Symbology.CODE128.equals(oldItem)) {
-                barcodeArray[i] = Barcode.FORMAT_CODE_128;
-            }
+            barcodeArray[i] = symbology2Barcode(oldItem);
         }
         return barcodeArray;
     }
 
-    private int symbology2Barcode() {
-        return 0;
+    private int symbology2Barcode(Symbology oldItem) {
+        int barcode = Barcode.FORMAT_CODE_128;
+        if (Symbology.PARTIAL.equals(oldItem)) {
+        } else if (Symbology.EAN8.equals(oldItem)) {
+            barcode = Barcode.FORMAT_EAN_8;
+        } else if (Symbology.UPCE.equals(oldItem)) {
+            barcode = Barcode.FORMAT_UPC_E;
+        } else if (Symbology.ISBN10.equals(oldItem)) {
+            barcode = Barcode.FORMAT_EAN_13;
+        } else if (Symbology.UPCA.equals(oldItem)) {
+            barcode = Barcode.FORMAT_UPC_A;
+        } else if (Symbology.EAN13.equals(oldItem)) {
+            barcode = Barcode.FORMAT_EAN_13;
+        } else if (Symbology.ISBN13.equals(oldItem)) {
+            barcode = Barcode.FORMAT_EAN_13;
+        } else if (Symbology.I25.equals(oldItem)) {
+        } else if (Symbology.DATABAR.equals(oldItem)) {
+            barcode = Barcode.FORMAT_DATA_MATRIX;
+        } else if (Symbology.DATABAR_EXP.equals(oldItem)) {
+            barcode = Barcode.FORMAT_DATA_MATRIX;
+        } else if (Symbology.CODABAR.equals(oldItem)) {
+            barcode = Barcode.FORMAT_CODABAR;
+        } else if (Symbology.CODE39.equals(oldItem)) {
+            barcode = Barcode.FORMAT_CODE_39;
+        } else if (Symbology.PDF417.equals(oldItem)) {
+            barcode = Barcode.FORMAT_PDF417;
+        } else if (Symbology.QRCODE.equals(oldItem)) {
+            barcode = Barcode.FORMAT_QR_CODE;
+        } else if (Symbology.CODE93.equals(oldItem)) {
+            barcode = Barcode.FORMAT_CODE_93;
+        } else if (Symbology.CODE128.equals(oldItem)) {
+            barcode = Barcode.FORMAT_CODE_128;
+        }
+        return barcode;
     }
 
     private Symbology barcode2Symbology(int barcode) {
-        return Symbology.CODE128;
+        Symbology symbology = Symbology.CODE128;
+        if (Barcode.FORMAT_EAN_8 == barcode) {
+            symbology = Symbology.EAN8;
+        } else if (Barcode.FORMAT_UPC_E == barcode) {
+            symbology = Symbology.UPCE;
+        } else if (Barcode.FORMAT_UPC_A == barcode) {
+            symbology = Symbology.UPCA;
+        } else if (Barcode.FORMAT_EAN_13 == barcode) {
+            symbology = Symbology.EAN13;
+        }else if (Barcode.FORMAT_DATA_MATRIX == barcode) {
+            symbology = Symbology.DATABAR_EXP;
+        } else if (Barcode.FORMAT_CODABAR == barcode) {
+            symbology = Symbology.CODABAR;
+        } else if (Barcode.FORMAT_CODE_39 ==barcode) {
+            symbology = Symbology.CODE39;
+        } else if (Barcode.FORMAT_PDF417 == barcode) {
+            symbology = Symbology.PDF417;
+        } else if (Barcode.FORMAT_QR_CODE == barcode) {
+            symbology = Symbology.QRCODE;
+        } else if (Barcode.FORMAT_CODE_93 == barcode) {
+            symbology = Symbology.CODE93;
+        } else if (Barcode.FORMAT_CODE_128 == barcode) {
+            symbology = Symbology.CODE128;
+        }
+        return symbology;
     }
-
 
     public int getDisplayOrientation(int cameraID) {
         Camera.CameraInfo info = new Camera.CameraInfo();
@@ -248,6 +273,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
     private Rect getFinalDecodeRect(View view) {
         Rect decodeViewRect = getDecodeView2CameraViewRect(view);
         Rect scaledRect = getCameraView2PreviewScaledRect(decodeViewRect, previewWidth, previewHeight);
+        mScaledRect = scaledRect;
         Rect rotatedRect = getPreviewRotatedRect(scaledRect, previewWidth, previewHeight);
         return rotatedRect;
     }
