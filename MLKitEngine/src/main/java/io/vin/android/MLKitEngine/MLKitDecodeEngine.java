@@ -68,6 +68,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
     @Override
     public void setDecodeRect(View view) {
         mDecodeAreaView = new WeakReference<>(view);
+        isUILock = false;
     }
 
     @Override
