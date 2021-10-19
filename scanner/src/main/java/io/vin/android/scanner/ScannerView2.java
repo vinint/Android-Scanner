@@ -7,7 +7,10 @@ import android.os.Vibrator;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import io.vin.android.ZbarEngine.ZbarDecodeEngine;
 import io.vin.android.DecodeProtocol.DecodeEngine;
@@ -31,14 +34,17 @@ public class ScannerView2 extends Camera1View {
         initScanner();
     }
 
+    private Map<String,Long> mBarcodeCacheMap = new HashMap<>();
+    private static long mBarcodeInterval = -1;
+    private static boolean mEnableBarcodeInterval = false;
 
-    private boolean canScan = true;
-    private boolean canVibrate = false;
-    private long lastScanTime = -1;
+    private boolean mEnableScan = true;
+    private boolean mEnableVibrate = false;
+    private long mLastScanTime = -1;
     private Vibrator mVibrator;
+    private DecodeEngine mDecodeEngine;
     private SingleScanCallBack mSingleScanCallBack;
     private MultipleScanCallBack mMultipleScanCallBack;
-    private DecodeEngine mDecodeEngine;
     private Camera.PreviewCallback mScanPreviewCallback;
 
     @Override
@@ -76,24 +82,38 @@ public class ScannerView2 extends Camera1View {
     }
 
     private void handlePreviewFrame(byte[] data, Camera camera) {
-        if (!this.canScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
+        if (!this.mEnableScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
             return;
         }
         mDecodeEngine.decode(data, camera,getCameraID(),v->{
             List<Result> resultList = v;
             if (resultList != null && !resultList.isEmpty()) {
                 if (mSingleScanCallBack != null) {
-                    mSingleScanCallBack.singleScan(resultList.get(0));
+                    Result item = resultList.get(0);
+                    if (mEnableBarcodeInterval
+                            && mBarcodeCacheMap.containsKey(item.getContents())) {
+                        if (System.currentTimeMillis() - mBarcodeCacheMap.get(item.getContents()) > mBarcodeInterval) {
+                            //到达时间间隔返回数据
+                            mSingleScanCallBack.singleScan(item);
+                            mBarcodeCacheMap.put(item.getContents(),System.currentTimeMillis());
+                        }
+                    } else {
+                        mSingleScanCallBack.singleScan(item);
+                        mBarcodeCacheMap.put(item.getContents(),System.currentTimeMillis());
+                    }
+                    //清除超过时间间很久的数据
+                    removeTimeoutData();
                 }
+
                 if (mMultipleScanCallBack != null) {
                     mMultipleScanCallBack.multipleScan(resultList);
                 }
 
-                if (canVibrate) {
+                if (mEnableVibrate) {
                     long nowTime = System.currentTimeMillis();
-                    if (nowTime - this.lastScanTime > 2000) {
+                    if (nowTime - this.mLastScanTime > 2000) {
                         this.mVibrator.vibrate(200);
-                        this.lastScanTime = nowTime;
+                        this.mLastScanTime = nowTime;
                     }
                 }
             }
@@ -101,16 +121,34 @@ public class ScannerView2 extends Camera1View {
 
     }
 
+    private void removeTimeoutData(){
+        long nowTime = System.currentTimeMillis();
+        for (Iterator<Map.Entry<String, Long>> it = mBarcodeCacheMap.entrySet().iterator(); it.hasNext();){
+            Map.Entry<String, Long> item = it.next();
+            if (nowTime - item.getValue() > mBarcodeInterval){
+                it.remove();
+            }
+        }
+    }
+
+    public static void enableBarcodeInterval(boolean enableBarcodeInterval){
+        mEnableBarcodeInterval = enableBarcodeInterval;
+    }
+
+    public static void setBarcodeInterval(long barcodeInterval){
+        mBarcodeInterval = barcodeInterval;
+    }
+
     public void startScan() {
-        this.canScan = true;
+        this.mEnableScan = true;
     }
 
     public void stopScan() {
-        this.canScan = false;
+        this.mEnableScan = false;
     }
 
     public void enableVibrator(Boolean canVibrate) {
-        this.canVibrate = canVibrate;
+        this.mEnableVibrate = canVibrate;
     }
 
     public void setDecoderEngine(DecodeEngine engine) {
