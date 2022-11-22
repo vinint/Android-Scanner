@@ -23,6 +23,8 @@ import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 
 public class MLKitDecodeEngine implements DecodeEngine {
@@ -73,35 +75,53 @@ public class MLKitDecodeEngine implements DecodeEngine {
 
     @Override
     public List<Result> decode(byte[] data, Camera camera, int cameraID) {
-        if (!isUILock) {
-            this.mCameraID = cameraID;
-            this.previewWidth = camera.getParameters().getPreviewSize().width;
-            this.previewHeight = camera.getParameters().getPreviewSize().height;
-            this.displayOrientation = getDisplayOrientation(0);
-            //计算相对于预览图片的解码区域
-            mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
-        }
-        InputImage image = InputImage.fromByteArray(
-                data,
-                previewWidth,
-                previewHeight,
-                displayOrientation,
-                InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
-        );
+        if (!isDecoding) {
+            isDecoding = true;
+            mScanResultList.clear();
 
-        Task<List<Barcode>> resultTask = mScanner.process(image);
-        List<Barcode> barcodeList = resultTask.getResult();
-        //若能扫描到条码，说明UI已经固定
-        if (!barcodeList.isEmpty()) {
-            isUILock = true;
-        }
-        mScanResultList.clear();
-        for (Barcode item : barcodeList) {
-            if (containsRect(item.getBoundingBox(), mScaledRect)) {
-            Result resultItem = new Result();
-            resultItem.setContents(item.getRawValue());
-            mScanResultList.add(resultItem);
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            if (!isUILock) {
+                this.mCameraID = cameraID;
+                this.previewWidth = camera.getParameters().getPreviewSize().width;
+                this.previewHeight = camera.getParameters().getPreviewSize().height;
+                this.displayOrientation = getDisplayOrientation(0);
+                //计算相对于预览图片的解码区域
+                mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
             }
+            InputImage image = InputImage.fromByteArray(
+                    data,
+                    previewWidth,
+                    previewHeight,
+                    displayOrientation,
+                    InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
+            );
+
+            Task<List<Barcode>> resultTask = mScanner.process(image)
+                    .addOnFailureListener(v -> {
+                        countDownLatch.countDown();
+                        isDecoding = false;
+                    })
+                    .addOnCompleteListener(v -> {
+                        countDownLatch.countDown();
+                        isDecoding = false;
+                    });
+            try { countDownLatch.await(500,TimeUnit.MILLISECONDS);} catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            List<Barcode> barcodeList = resultTask.getResult();
+            //若能扫描到条码，说明UI已经固定
+            if (barcodeList!=null && !barcodeList.isEmpty()) {
+                isUILock = true;
+            }
+
+            for (Barcode item : barcodeList) {
+                if (containsRect(item.getBoundingBox(), mScaledRect)) {
+                    Result resultItem = new Result();
+                    resultItem.setContents(item.getRawValue());
+                    mScanResultList.add(resultItem);
+                }
+            }
+
         }
         return mScanResultList;
     }
