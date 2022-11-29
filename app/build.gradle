@@ -31,8 +31,10 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 
-    implementation project(path: ':scanner')
-    implementation project(path: ':MLKitEngine')
+    implementation project(':DecodeProtocol')
+    implementation project(':MLKitEngine')
+    implementation project(':ZbarEngine')
+    implementation project(':scanner')
     implementation "io.reactivex.rxjava2:rxjava:2.2.10"
     implementation 'com.github.tbruyelle:rxpermissions:0.10.2'
 

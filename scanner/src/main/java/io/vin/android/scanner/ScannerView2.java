@@ -85,7 +85,7 @@ public class ScannerView2 extends Camera1View {
         if (!this.mEnableScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
             return;
         }
-        mDecodeEngine.decode(data, camera,getCameraID(),v->{
+        mDecodeEngine.decode(data, camera.getParameters().getPreviewSize(), getCameraID(),v->{
             List<Result> resultList = v;
             if (resultList != null && !resultList.isEmpty()) {
                 if (mSingleScanCallBack != null) {

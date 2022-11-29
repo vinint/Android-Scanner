@@ -78,9 +78,9 @@ public interface DecodeEngine {
      *Createtime 2019-07-26 14:13
      *Modifytime 2019-07-26 14:13
      */
-    List<Result> decode(byte[] data, Camera camera,int cameraID);
+    List<Result> decode(byte[] data, Camera.Size previewSize,int cameraID);
 
-    void decode(byte[] data, Camera camera,int cameraID,DecodeCallback callback);
+    void decode(byte[] data, Camera.Size previewSize,int cameraID,DecodeCallback callback);
 
     public interface DecodeCallback{
         void onDecodeCallback(List<Result> resultList);

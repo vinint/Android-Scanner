@@ -32,12 +32,14 @@ public class HuaweiDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public List<Result> decode(byte[] data, Camera camera, int cameraID) {
+    public List<Result> decode(byte[] data, Camera.Size previewSize, int cameraID) {
         return null;
     }
 
     @Override
-    public void decode(byte[] data, Camera camera, int cameraID, DecodeCallback callback) {
+    public void decode(byte[] data, Camera.Size previewSize, int cameraID, DecodeCallback callback) {
 
     }
+
+
 }

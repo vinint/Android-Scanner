@@ -206,8 +206,8 @@ public class ZbarDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public List<Result> decode(byte[] data, Camera camera,int cameraID) {
-        Camera.Size size = camera.getParameters().getPreviewSize();
+    public List<Result> decode(byte[] data, Camera.Size previewSize,int cameraID) {
+        Camera.Size size = previewSize;
         int width = size.width;
         int height = size.height;
         Image image = new Image(width, height, "Y800");
@@ -244,8 +244,8 @@ public class ZbarDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public void decode(byte[] data, Camera camera, int cameraID, DecodeCallback callback)
+    public void decode(byte[] data, Camera.Size previewSize, int cameraID, DecodeCallback callback)
     {
-        callback.onDecodeCallback(decode(data,camera,cameraID));
+        callback.onDecodeCallback(decode(data,previewSize,cameraID));
     }
 }

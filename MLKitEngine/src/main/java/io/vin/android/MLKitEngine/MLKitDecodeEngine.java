@@ -7,12 +7,10 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-
-import com.google.android.gms.tasks.Task;
-import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
 import io.vin.android.DecodeProtocol.DecodeEngine;
@@ -25,12 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class MLKitDecodeEngine implements DecodeEngine {
-    private final WeakReference<Context> mContext;
-    private final WeakReference<View> mView;
-    private WeakReference<View> mDecodeAreaView;
+    private final Context mContext;
+    private final View mCameraView;
+    private View mDecodeAreaView;
     private Rect mDecodeAreaViewRect;
     //当前界面是否固定
     private volatile boolean isUILock = false;
@@ -52,8 +51,8 @@ public class MLKitDecodeEngine implements DecodeEngine {
     private BarcodeScanner mScanner;
 
     public MLKitDecodeEngine(Context context, View view) {
-        this.mContext = new WeakReference<>(context);
-        this.mView = new WeakReference<>(view);
+        this.mContext = context.getApplicationContext();
+        this.mCameraView = view;
         this.mSymbologyList = Symbology.ALL;
         configDecoder();
     }
@@ -69,12 +68,12 @@ public class MLKitDecodeEngine implements DecodeEngine {
 
     @Override
     public void setDecodeRect(View view) {
-        mDecodeAreaView = new WeakReference<>(view);
+        mDecodeAreaView = view;
         isUILock = false;
     }
 
     @Override
-    public List<Result> decode(byte[] data, Camera camera, int cameraID) {
+    public List<Result> decode(byte[] data, Camera.Size previewSize, int cameraID) {
         if (!isDecoding) {
             isDecoding = true;
             mScanResultList.clear();
@@ -82,11 +81,11 @@ public class MLKitDecodeEngine implements DecodeEngine {
             CountDownLatch countDownLatch = new CountDownLatch(1);
             if (!isUILock) {
                 this.mCameraID = cameraID;
-                this.previewWidth = camera.getParameters().getPreviewSize().width;
-                this.previewHeight = camera.getParameters().getPreviewSize().height;
+                this.previewWidth = previewSize.width;
+                this.previewHeight = previewSize.height;
                 this.displayOrientation = getDisplayOrientation(0);
                 //计算相对于预览图片的解码区域
-                mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
+                mDecodeRect = getFinalDecodeRect(mDecodeAreaView);
             }
             InputImage image = InputImage.fromByteArray(
                     data,
@@ -96,19 +95,27 @@ public class MLKitDecodeEngine implements DecodeEngine {
                     InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
             );
 
-            Task<List<Barcode>> resultTask = mScanner.process(image)
-                    .addOnFailureListener(v -> {
+            AtomicReference<List<Barcode>> barcodeListAF = new AtomicReference<>();
+            mScanner.process(image)
+                    .addOnSuccessListener(barcodes->{
+                        barcodeListAF.set(barcodes);
                         countDownLatch.countDown();
                         isDecoding = false;
-                    })
-                    .addOnCompleteListener(v -> {
+                    }).addOnFailureListener(v -> {
+                        barcodeListAF.set(new ArrayList<>());
                         countDownLatch.countDown();
+                        isDecoding = false;
+                    }).addOnCompleteListener(v -> {
                         isDecoding = false;
                     });
-            try { countDownLatch.await(500,TimeUnit.MILLISECONDS);} catch (InterruptedException e) {
+            try {
+                countDownLatch.await(500,TimeUnit.MILLISECONDS);
+                isDecoding = false;
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            List<Barcode> barcodeList = resultTask.getResult();
+
+            List<Barcode> barcodeList = barcodeListAF.get();
             //若能扫描到条码，说明UI已经固定
             if (barcodeList!=null && !barcodeList.isEmpty()) {
                 isUILock = true;
@@ -127,14 +134,14 @@ public class MLKitDecodeEngine implements DecodeEngine {
     }
 
     @Override
-    public void decode(byte[] data, Camera camera, int cameraID, DecodeCallback callback) {
+    public void decode(byte[] data, Camera.Size previewSize, int cameraID, DecodeCallback callback) {
         if (!isUILock) {
             this.mCameraID = cameraID;
-            this.previewWidth = camera.getParameters().getPreviewSize().width;
-            this.previewHeight = camera.getParameters().getPreviewSize().height;
+            this.previewWidth = previewSize.width;
+            this.previewHeight = previewSize.height;
             this.displayOrientation = getDisplayOrientation(0);
             //计算相对于预览图片的解码区域
-            mDecodeRect = getFinalDecodeRect(mDecodeAreaView.get());
+            mDecodeRect = getFinalDecodeRect(mDecodeAreaView);
         }
 
         if (!isDecoding) {
@@ -147,10 +154,9 @@ public class MLKitDecodeEngine implements DecodeEngine {
             );
 
             mScanner.process(image)
-                    .addOnFailureListener(v-> isDecoding = false)
-                    .addOnCompleteListener(v -> {
+                    .addOnSuccessListener(barcodes -> {
                         isDecoding = false;
-                        List<Barcode> barcodeList = v.getResult();
+                        List<Barcode> barcodeList = barcodes;
                         //若能扫描到条码，说明UI已经固定
                         if (!barcodeList.isEmpty()) {
                             isUILock = true;
@@ -166,7 +172,8 @@ public class MLKitDecodeEngine implements DecodeEngine {
                             }
                         }
                         callback.onDecodeCallback(mScanResultList);
-                    });
+                    })
+                    .addOnFailureListener(v-> isDecoding = false);
             isDecoding = true;
         }
     }
@@ -271,7 +278,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(cameraID, info);
         int degrees = 0;
-        switch (((WindowManager) mContext.get().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation()) {
+        switch (((WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation()) {
             case 0:
                 degrees = 0;
                 break;
@@ -307,7 +314,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
         view.getGlobalVisibleRect(cropRect);
 
         Rect scanerRect = new Rect();
-        mView.get().getGlobalVisibleRect(scanerRect);
+        mCameraView.getGlobalVisibleRect(scanerRect);
 
         if (cropRect.width() == 0 ||
                 cropRect.height() == 0 ||
@@ -358,15 +365,15 @@ public class MLKitDecodeEngine implements DecodeEngine {
     }
 
     private Rect getCameraView2PreviewScaledRect(Rect framingRect, int previewWidth, int previewHeight) {
-        int scanerViewWidth = this.mView.get().getWidth();
-        int scanerViewHeight = this.mView.get().getHeight();
+        int scanerViewWidth = this.mCameraView.getWidth();
+        int scanerViewHeight = this.mCameraView.getHeight();
 
         int width, height;
-        if (DisplayUtils.getScreenOrientation(mContext.get()) == Configuration.ORIENTATION_PORTRAIT//竖屏使用
+        if (DisplayUtils.getScreenOrientation(mContext) == Configuration.ORIENTATION_PORTRAIT//竖屏使用
                 && previewHeight < previewWidth) {
             width = previewHeight;
             height = previewWidth;
-        } else if (DisplayUtils.getScreenOrientation(mContext.get()) == Configuration.ORIENTATION_LANDSCAPE//横屏使用
+        } else if (DisplayUtils.getScreenOrientation(mContext) == Configuration.ORIENTATION_LANDSCAPE//横屏使用
                 && previewHeight > previewWidth) {
             width = previewHeight;
             height = previewWidth;

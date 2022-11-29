@@ -32,8 +32,8 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 
-    api 'io.vin.android:DecodeProtocol:1.0.1'
-    implementation 'io.vin.android:ZbarEngine:1.0.0'
+    compileOnly project(':DecodeProtocol')
+    compileOnly project(':ZbarEngine')
 }
 
 //upload to internal maven

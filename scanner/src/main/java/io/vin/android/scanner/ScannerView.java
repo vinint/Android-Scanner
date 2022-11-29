@@ -52,7 +52,7 @@ public class ScannerView extends CameraView {
         if (!this.canScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
             return;
         }
-        List<Result> resultList = mDecodeEngine.decode(data, camera,getCameraID());
+        List<Result> resultList = mDecodeEngine.decode(data, camera.getParameters().getPreviewSize(), getCameraID());
         if (resultList != null && !resultList.isEmpty()) {
             if (mSingleScanCallBack != null) {
                 mSingleScanCallBack.singleScan(resultList.get(0));
