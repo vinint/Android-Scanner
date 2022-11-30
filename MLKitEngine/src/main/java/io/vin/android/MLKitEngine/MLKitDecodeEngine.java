@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -21,6 +22,7 @@ import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,11 +52,14 @@ public class MLKitDecodeEngine implements DecodeEngine {
     private BarcodeScannerOptions mScannerOptions;
     private BarcodeScanner mScanner;
 
+    private Map<Integer,Symbology> mFormat2symbologyMap;
+
     public MLKitDecodeEngine(Context context, View view) {
         this.mContext = context.getApplicationContext();
         this.mCameraView = view;
         this.mSymbologyList = Symbology.ALL;
         configDecoder();
+        initFormat2symbologyMap();
     }
 
     @Override
@@ -124,7 +129,8 @@ public class MLKitDecodeEngine implements DecodeEngine {
             for (Barcode item : barcodeList) {
                 if (containsRect(item.getBoundingBox(), mScaledRect)) {
                     Result resultItem = new Result();
-                    resultItem.setContents(item.getRawValue());
+                    resultItem.setSymbology(format2symbology(item.getFormat()));
+                    resultItem.setContents(item.getDisplayValue());
                     mScanResultList.add(resultItem);
                 }
             }
@@ -414,4 +420,26 @@ public class MLKitDecodeEngine implements DecodeEngine {
 
         return rotatedRect;
     }
+
+    private Symbology format2symbology(int format){
+        initFormat2symbologyMap();
+        return mFormat2symbologyMap.get(format);
+    }
+
+    private void initFormat2symbologyMap(){
+        if (mFormat2symbologyMap == null || mFormat2symbologyMap.isEmpty()){
+            mFormat2symbologyMap = new ArrayMap<>();
+            mFormat2symbologyMap.put(Barcode.FORMAT_CODE_128,Symbology.CODE128);
+            mFormat2symbologyMap.put(Barcode.FORMAT_CODE_39,Symbology.CODE39);
+            mFormat2symbologyMap.put(Barcode.FORMAT_CODE_93,Symbology.CODE93);
+            mFormat2symbologyMap.put(Barcode.FORMAT_CODABAR,Symbology.CODABAR);
+            mFormat2symbologyMap.put(Barcode.FORMAT_EAN_13,Symbology.EAN13);
+            mFormat2symbologyMap.put(Barcode.FORMAT_EAN_8,Symbology.EAN8);
+            mFormat2symbologyMap.put(Barcode.FORMAT_QR_CODE,Symbology.QRCODE);
+            mFormat2symbologyMap.put(Barcode.FORMAT_UPC_A,Symbology.UPCA);
+            mFormat2symbologyMap.put(Barcode.FORMAT_UPC_E,Symbology.UPCE);
+            mFormat2symbologyMap.put(Barcode.FORMAT_PDF417,Symbology.PDF417);
+        }
+    }
+
 }
