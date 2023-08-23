@@ -23,7 +23,6 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url 'http://10.130.132.94:8081/repository/Android/' }
         mavenLocal()
         maven { url 'https://maven.aliyun.com/repository/public' }
         maven { url 'https://maven.aliyun.com/repository/google' }

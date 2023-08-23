@@ -4,18 +4,17 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import io.vin.android.ZbarEngine.ZbarDecodeEngine;
 import io.vin.android.DecodeProtocol.DecodeEngine;
-import io.vin.android.DecodeProtocol.Symbology;
 import io.vin.android.DecodeProtocol.Result;
+import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.ZbarEngine.ZbarDecodeEngine;
 import io.vin.android.scanner.core.Camera1View;
 
 public class ScannerView2 extends Camera1View {
@@ -34,10 +33,9 @@ public class ScannerView2 extends Camera1View {
         initScanner();
     }
 
-    private Map<String,Long> mBarcodeCacheMap = new HashMap<>();
-    private static long mBarcodeInterval = -1;
     private static boolean mEnableBarcodeInterval = false;
-
+    private static long mBarcodeInterval = -1;
+    private static String mUserDefinedRegex = "^[A-Za-z0-9]+$";
     private boolean mEnableScan = true;
     private boolean mEnableVibrate = false;
     private long mLastScanTime = -1;
@@ -50,70 +48,48 @@ public class ScannerView2 extends Camera1View {
     @Override
     public void setPreviewCallback(Camera.PreviewCallback callback) {
         this.mScanPreviewCallback = callback;
-        super.setPreviewCallback((byte[] data, Camera camera)-> {
+        super.setPreviewCallback((byte[] data, Camera camera) -> {
             try {
                 // 1.解码
-                handlePreviewFrame(data,camera);
+                handlePreviewFrame(data, camera);
                 // 2.回推预览数据
-                if (mScanPreviewCallback!=null){
-                    mScanPreviewCallback.onPreviewFrame(data,camera);
+                if (mScanPreviewCallback != null) {
+                    mScanPreviewCallback.onPreviewFrame(data, camera);
                 }
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
     }
 
-    private void initScanner(){
-        this.mDecodeEngine = new ZbarDecodeEngine(getContext(),this);
+    private void initScanner() {
+        this.mDecodeEngine = new ZbarDecodeEngine(getContext(), this);
         this.mVibrator = (Vibrator) getContext().getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-        super.setPreviewCallback((byte[] data, Camera camera)-> {
+        super.setPreviewCallback((byte[] data, Camera camera) -> {
             try {
                 // 1.解码
-                handlePreviewFrame(data,camera);
+                handlePreviewFrame(data, camera);
                 // 2.回推预览数据
-                if (mScanPreviewCallback!=null){
-                    mScanPreviewCallback.onPreviewFrame(data,camera);
+                if (mScanPreviewCallback != null) {
+                    mScanPreviewCallback.onPreviewFrame(data, camera);
                 }
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
     }
 
     private void handlePreviewFrame(byte[] data, Camera camera) {
-        if (!this.mEnableScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) {
-            return;
-        }
-        mDecodeEngine.decode(data, camera.getParameters().getPreviewSize(), getCameraID(),v->{
+        if (!this.mEnableScan || (mSingleScanCallBack == null && mMultipleScanCallBack == null)) { return;}
+        mDecodeEngine.decode(data, camera.getParameters().getPreviewSize(), getCameraID(), v -> {
             List<Result> resultList = v;
             if (resultList != null && !resultList.isEmpty()) {
-                if (mSingleScanCallBack != null) {
-                    Result item = resultList.get(0);
-                    if (mEnableBarcodeInterval
-                            && mBarcodeCacheMap.containsKey(item.getContents())) {
-                        if (System.currentTimeMillis() - mBarcodeCacheMap.get(item.getContents()) > mBarcodeInterval) {
-                            //到达时间间隔返回数据
-                            mSingleScanCallBack.singleScan(item);
-                            mBarcodeCacheMap.put(item.getContents(),System.currentTimeMillis());
-                        }
-                    } else {
-                        mSingleScanCallBack.singleScan(item);
-                        mBarcodeCacheMap.put(item.getContents(),System.currentTimeMillis());
-                    }
-                    //清除超过时间间很久的数据
-                    removeTimeoutData();
-                }
-
-                if (mMultipleScanCallBack != null) {
-                    mMultipleScanCallBack.multipleScan(resultList);
-                }
-
+                Result item = resultList.get(0);
+                callBackData(item, resultList);
                 if (mEnableVibrate) {
                     long nowTime = System.currentTimeMillis();
                     if (nowTime - this.mLastScanTime > 2000) {
                         this.mVibrator.vibrate(200);
-                        this.mLastScanTime = nowTime;
                     }
                 }
             }
@@ -121,22 +97,16 @@ public class ScannerView2 extends Camera1View {
 
     }
 
-    private void removeTimeoutData(){
-        long nowTime = System.currentTimeMillis();
-        for (Iterator<Map.Entry<String, Long>> it = mBarcodeCacheMap.entrySet().iterator(); it.hasNext();){
-            Map.Entry<String, Long> item = it.next();
-            if (nowTime - item.getValue() > mBarcodeInterval){
-                it.remove();
-            }
-        }
-    }
-
-    public static void enableBarcodeInterval(boolean enableBarcodeInterval){
+    public static void enableBarcodeInterval(boolean enableBarcodeInterval) {
         mEnableBarcodeInterval = enableBarcodeInterval;
     }
 
-    public static void setBarcodeInterval(long barcodeInterval){
+    public static void setBarcodeInterval(long barcodeInterval) {
         mBarcodeInterval = barcodeInterval;
+    }
+
+    public static void setContentRegex(String regex) {
+        mUserDefinedRegex = regex;
     }
 
     public void startScan() {
@@ -186,6 +156,43 @@ public class ScannerView2 extends Camera1View {
     public void removeMultipleScanCallBack() {
         this.mMultipleScanCallBack = null;
     }
+
+    private boolean matchUserDefinedRegex(Result item) {
+        String content = item.getContents();
+        if (item == null || TextUtils.isEmpty(content)){ return false; }
+        if (TextUtils.isEmpty(mUserDefinedRegex)) return true;
+        if (item.getSymbology() != Symbology.QRCODE){
+            return content.matches(mUserDefinedRegex);
+        }
+        return true;
+    }
+
+    private void callBackData(Result singleData, List<Result> multipleData) {
+        long currentTime = System.currentTimeMillis();
+        if (mEnableBarcodeInterval && currentTime - mLastScanTime > mBarcodeInterval) {
+            // 到达时间间隔返回数据
+            realCallBackData(singleData,multipleData);
+            mLastScanTime = currentTime;
+        }else {
+            realCallBackData(singleData,multipleData);
+        }
+    }
+
+    private void realCallBackData(Result singleData, List<Result> multipleData) {
+        if (singleData != null && mSingleScanCallBack != null) {
+            if (singleData != null && matchUserDefinedRegex(singleData)) { mSingleScanCallBack.singleScan(singleData); }
+        }
+        if (multipleData != null && mMultipleScanCallBack != null) {
+            List newMultipleData = new ArrayList<Result>();
+            for (Result item:multipleData) {
+                if (item != null && matchUserDefinedRegex(item)){
+                    newMultipleData.add(item);
+                }
+            }
+            mMultipleScanCallBack.multipleScan(newMultipleData);
+        }
+    }
+
 
     /**
      * one frame data only decode one result,even if there are multiple results
