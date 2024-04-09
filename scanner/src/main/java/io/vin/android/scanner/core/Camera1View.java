@@ -1,6 +1,8 @@
 package io.vin.android.scanner.core;
 
 
+import static android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -15,11 +17,10 @@ import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
-import io.vin.android.DecodeProtocol.utils.DisplayUtils;
+
 import java.util.List;
 
-
-import static android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
+import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 
 
 /**
@@ -66,7 +67,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     // 启用相机或者禁用 enable the camera or disable
     private boolean mEnabled = true;
     // Surface是否存在 Surface exist or not
-    private boolean mSurfaceExist = false;
+    private volatile boolean mSurfaceExist = false;
     // 相机状态 camera state
     private int mState = STOPPED;
     // 同步对象 Sync Object
@@ -83,6 +84,9 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     private boolean mSupportFocusModeContinuousPicture = false;
     private Handler mAutoFocusHandler;
     private float mAspectTolerance = 0.2f;
+
+    private volatile Boolean isTakingPictures = false;
+    private PictureFailCallback mPictureFailCallback;
     // endregion
 
     private void initCamera() {
@@ -146,6 +150,10 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
         synchronized (mSyncObject) {
             mSurfaceExist = false;
             checkCurrentState();
+            if (isTakingPictures && mPictureFailCallback!=null){
+                // 触发界面拍照失败回调
+                mPictureFailCallback.onFail("surfaceDestroyed");
+            }
         }
 
     }
@@ -374,6 +382,10 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
         this.mPreviewCallback = callback;
     }
 
+    public void setPictureFailCallback(PictureFailCallback callback){
+        this.mPictureFailCallback = callback;
+    }
+
     /**
      * Method     takePicture
      * 拍照方法
@@ -383,21 +395,44 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
      * Mail       vinintg@gmail.com
      */
     public void takePicture(Camera.ShutterCallback shutter, Camera.PictureCallback raw, Camera.PictureCallback jpeg) {
-        if (isCameraAvailable()) {
-            try {
-                mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
-                    // 立刻取消自动对焦
-                    boolean tmpAutoFocus = mAutoFocus;
-                    setAutoFocus(false);
-                    // 业务层获取图片数据
-                    jpeg.onPictureTaken(data, camera);
-                    // 重新预览
-                    mCamera.startPreview();
-                    // 重新恢复自动对焦
-                    setAutoFocus(tmpAutoFocus);
-                });
-            } catch (Exception ex) {
-                ex.printStackTrace();
+        synchronized (mSyncObject) {
+            Boolean available = isCameraAvailable();
+            Log.d(TAG, "isCameraAvailable result:" +available+
+                    "\r\nmSupportCamera: " + mSupportCamera +
+                    "\r\nmEnabled: " + mEnabled +
+                    "\r\nmSurfaceExist: " + mSurfaceExist +
+                    "\r\ngetVisibility:" + (getVisibility() == VISIBLE) +
+                    "\r\nmState:" + mState);
+            if (available) {
+                try {
+                    isTakingPictures = true;
+                    mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
+                        isTakingPictures = false;
+                        Log.d(TAG, "takePicture回调");
+                        // 立刻取消自动对焦
+                        boolean tmpAutoFocus = mAutoFocus;
+                        setAutoFocus(false);
+                        // 业务层获取图片数据
+                        jpeg.onPictureTaken(data, camera);
+                        // 重新预览
+                        mCamera.startPreview();
+                        // 重新恢复自动对焦
+                        setAutoFocus(tmpAutoFocus);
+                    });
+                } catch (Exception ex) {
+                    Log.d(TAG, "takePicture异常：" + ex.getMessage());
+                    if (mPictureFailCallback!=null){
+                        // 触发界面拍照失败回调
+                        mPictureFailCallback.onFail(ex.getMessage());
+                    }
+                    isTakingPictures = false;
+                    ex.printStackTrace();
+                }
+            }else {
+                if (mPictureFailCallback!=null){
+                    // 触发界面拍照失败回调
+                    mPictureFailCallback.onFail("isCameraAvailable false");
+                }
             }
         }
     }
