@@ -407,17 +407,24 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 try {
                     isTakingPictures = true;
                     mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
-                        isTakingPictures = false;
-                        Log.d(TAG, "takePicture回调");
-                        // 立刻取消自动对焦
-                        boolean tmpAutoFocus = mAutoFocus;
-                        setAutoFocus(false);
-                        // 业务层获取图片数据
-                        jpeg.onPictureTaken(data, camera);
-                        // 重新预览
-                        mCamera.startPreview();
-                        // 重新恢复自动对焦
-                        setAutoFocus(tmpAutoFocus);
+                        try {
+                            isTakingPictures = false;
+                            Log.d(TAG, "takePicture回调");
+                            // 立刻取消自动对焦
+                            boolean tmpAutoFocus = mAutoFocus;
+                            setAutoFocus(false);
+                            // 业务层获取图片数据
+                            jpeg.onPictureTaken(data, camera);
+
+                            if (isCameraAvailable()){
+                                // 重新预览
+                                mCamera.startPreview();
+                                // 重新恢复自动对焦
+                                setAutoFocus(tmpAutoFocus);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     });
                 } catch (Exception ex) {
                     Log.d(TAG, "takePicture异常：" + ex.getMessage());
