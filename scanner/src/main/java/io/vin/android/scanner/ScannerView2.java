@@ -14,6 +14,7 @@ import java.util.List;
 import io.vin.android.DecodeProtocol.DecodeEngine;
 import io.vin.android.DecodeProtocol.Result;
 import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.MLKitEngine.MLKitDecodeEngine;
 import io.vin.android.ZbarEngine.ZbarDecodeEngine;
 import io.vin.android.scanner.core.Camera1View;
 
@@ -63,7 +64,11 @@ public class ScannerView2 extends Camera1View {
     }
 
     private void initScanner() {
-        this.mDecodeEngine = new ZbarDecodeEngine(getContext(), this);
+        if (ScannerSDK.getDecodeEngine() == DecodeEngineEnum.MLKIT){
+            setDecoderEngine(new MLKitDecodeEngine(getContext(), this));
+        }else {
+            setDecoderEngine(new ZbarDecodeEngine(getContext(), this));
+        }
         this.mVibrator = (Vibrator) getContext().getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
         super.setPreviewCallback((byte[] data, Camera camera) -> {
             try {
