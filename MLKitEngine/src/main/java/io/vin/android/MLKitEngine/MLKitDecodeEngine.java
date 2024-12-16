@@ -8,24 +8,24 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
-import io.vin.android.DecodeProtocol.DecodeEngine;
-import io.vin.android.DecodeProtocol.Symbology;
-import io.vin.android.DecodeProtocol.Result;
-import io.vin.android.DecodeProtocol.utils.DisplayUtils;
-
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.vin.android.DecodeProtocol.DecodeEngine;
+import io.vin.android.DecodeProtocol.Result;
+import io.vin.android.DecodeProtocol.Symbology;
+import io.vin.android.DecodeProtocol.utils.DisplayUtils;
 
 
 public class MLKitDecodeEngine implements DecodeEngine {
@@ -121,16 +121,17 @@ public class MLKitDecodeEngine implements DecodeEngine {
             }
 
             List<Barcode> barcodeList = barcodeListAF.get();
+            if (barcodeList == null){ barcodeList = new ArrayList();}
             //若能扫描到条码，说明UI已经固定
             if (barcodeList!=null && !barcodeList.isEmpty()) {
                 isUILock = true;
             }
-
             for (Barcode item : barcodeList) {
                 if (containsRect(item.getBoundingBox(), mScaledRect)) {
                     Result resultItem = new Result();
                     resultItem.setSymbology(format2symbology(item.getFormat()));
                     resultItem.setContents(item.getDisplayValue());
+                    resultItem.points = item.getCornerPoints();
                     mScanResultList.add(resultItem);
                 }
             }
@@ -174,6 +175,7 @@ public class MLKitDecodeEngine implements DecodeEngine {
                                 resultItem.setContents(item.getDisplayValue());
                                 resultItem.setRect(item.getBoundingBox());
                                 resultItem.setSymbology(barcode2Symbology(item.getFormat()));
+                                resultItem.points = item.getCornerPoints();
                                 mScanResultList.add(resultItem);
                             }
                         }

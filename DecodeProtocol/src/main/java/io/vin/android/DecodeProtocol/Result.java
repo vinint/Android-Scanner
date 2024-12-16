@@ -1,6 +1,7 @@
 package io.vin.android.DecodeProtocol;
 
 
+import android.graphics.Point;
 import android.graphics.Rect;
 
 public class Result {
@@ -8,6 +9,7 @@ public class Result {
     private String mContents;
     private Rect mRect;
     public int mSort = 0;
+    public Point[] points;
 
     public void setContents(String contents) {
         this.mContents = contents;
