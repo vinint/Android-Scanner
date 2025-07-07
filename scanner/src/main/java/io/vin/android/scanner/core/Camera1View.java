@@ -406,25 +406,30 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
             if (available) {
                 try {
                     isTakingPictures = true;
-                    mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
-                        try {
-                            isTakingPictures = false;
-                            Log.d(TAG, "takePicture回调");
-                            // 立刻取消自动对焦
-                            boolean tmpAutoFocus = mAutoFocus;
-                            setAutoFocus(false);
-                            // 业务层获取图片数据
-                            jpeg.onPictureTaken(data, camera);
+                    boolean autoFocusBack = mAutoFocus;
+                    mAutoFocus = false; // 取消自动对焦
+                    mCamera.autoFocus((boolean success, Camera camera1)->{
+                        mCamera.takePicture(shutter, raw, (byte[] data, Camera camera) -> {
+                            try {
+                                isTakingPictures = false;
+                                Log.d(TAG, "takePicture回调");
+                                // 立刻取消自动对焦
+                                boolean tmpAutoFocus = mAutoFocus;
+                                setAutoFocus(false);
+                                // 业务层获取图片数据
+                                jpeg.onPictureTaken(data, camera);
 
-                            if (isCameraAvailable()){
-                                // 重新预览
-                                mCamera.startPreview();
-                                // 重新恢复自动对焦
-                                setAutoFocus(tmpAutoFocus);
+                                if (isCameraAvailable()){
+                                    // 重新预览
+                                    mCamera.startPreview();
+                                    // 重新恢复自动对焦
+                                    setAutoFocus(tmpAutoFocus);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                            mAutoFocus = autoFocusBack; // 恢复自动对焦状态
+                        });
                     });
                 } catch (Exception ex) {
                     Log.d(TAG, "takePicture异常：" + ex.getMessage());
