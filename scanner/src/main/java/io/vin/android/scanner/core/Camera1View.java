@@ -80,6 +80,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
     private ParametersCallback mParametersCallback;
 
     private boolean mAutoFocus = false;
+    private FocusMode mFocusMode = null;
     private long mAutoFocusInterval = 1000l;
     private boolean mSupportFocusModeContinuousPicture = false;
     private Handler mAutoFocusHandler;
@@ -249,7 +250,19 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 }
 
                 // 4.设置连续对焦
-                supportFocusModeContinuousPicture(mCamera);
+                if (supportFocusModeContinuousPicture(mCamera)){
+                    setFocusModeContinuousPicture(mCamera);
+                }
+                // 是否支持扫码场景
+                if (supportSceneModeBarcode(mCamera)) {
+                    try {
+                        Camera.Parameters parameters = mCamera.getParameters();
+                        parameters.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
+                        mCamera.setParameters(parameters);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 // 5.开始预览 start preview
                 mCamera.startPreview();
                 // 6.防止连续对焦不生效
@@ -257,7 +270,9 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 // 7.若不只支持FOCUS_MODE_CONTINUOUS_PICTURE模式则，调用autoFocus
                 if (mAutoFocus && !mSupportFocusModeContinuousPicture) {
                     // 走手动定期调用对焦实现
-                    scheduleAutoFocus();
+                    this.postDelayed(() -> {
+                        scheduleAutoFocus();
+                    }, 1000);
                 }
 
                 // 8.设置预览回调
@@ -538,6 +553,7 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
 
         } else {
             if (mAutoFocusHandler != null) {
+                mAutoFocusHandler.removeCallbacks(doAutoFocus);
                 mAutoFocusHandler = null;
             }
             if (isCameraAvailable()) {
@@ -548,6 +564,48 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                 }
             }
         }
+    }
+
+    public FocusMode getFocusMode() {
+        if (mFocusMode == null) {
+            if (supportFocusModeContinuousPicture(mCamera)) {
+                mFocusMode = FocusMode.FOCUS_MODE_CONTINUOUS_PICTURE;
+            }else {
+                mFocusMode = FocusMode.SCHEDULE_AUTOFOCUS;
+            }
+        }
+        return mFocusMode;
+    }
+
+    public boolean setFocusMode(FocusMode focusMode) {
+        if (mAutoFocus && !focusMode.equals(mFocusMode)) {
+            if (focusMode == FocusMode.FOCUS_MODE_CONTINUOUS_PICTURE) {
+                if (supportFocusModeContinuousPicture(mCamera)) {
+                    setFocusModeContinuousPicture(mCamera);
+                    if (mAutoFocusHandler != null) {
+                        mAutoFocusHandler.removeCallbacks(doAutoFocus);
+                    }
+                    mFocusMode = focusMode;
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                try {
+                    Camera.Parameters parameters = mCamera.getParameters();
+                    if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                        mCamera.setParameters(parameters);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                scheduleAutoFocus();
+                mFocusMode = focusMode;
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -604,22 +662,43 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
      */
     private boolean supportFocusModeContinuousPicture(Camera camera) {
         mSupportFocusModeContinuousPicture = false;
+        if (Build.BRAND.toUpperCase().equals("REDMI")){
+            mSupportFocusModeContinuousPicture = false;
+        }else {
+            Camera.Parameters parameters = camera.getParameters();
+            if (parameters.getSupportedFocusModes().contains(FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                mSupportFocusModeContinuousPicture = true;
+            } else {
+                mSupportFocusModeContinuousPicture = false;
+            }
+        }
+        return mSupportFocusModeContinuousPicture;
+    }
 
-//        return mSupportFocusModeContinuousPicture;
+    private void setFocusModeContinuousPicture(Camera camera) {
         Camera.Parameters parameters = camera.getParameters();
         if (parameters.getSupportedFocusModes().contains(FOCUS_MODE_CONTINUOUS_PICTURE)) {
             try {
                 mCamera.cancelAutoFocus();
                 parameters.setFocusMode(FOCUS_MODE_CONTINUOUS_PICTURE);
                 mCamera.setParameters(parameters);
-                mSupportFocusModeContinuousPicture = true;
-            } catch (Exception ex) {
-                mSupportFocusModeContinuousPicture = false;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } else {
-            mSupportFocusModeContinuousPicture = false;
         }
-        return mSupportFocusModeContinuousPicture;
+    }
+
+    // 是否支持扫码场景（Barcode/QR code）优化相机设置
+    private boolean supportSceneModeBarcode(Camera camera){
+        try {
+            Camera.Parameters parameters = camera.getParameters();
+            if (parameters.getSupportedSceneModes() != null && parameters.getSupportedSceneModes().contains(Camera.Parameters.SCENE_MODE_BARCODE)) {
+                return true;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private boolean isCameraAvailable() {
