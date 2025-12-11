@@ -263,19 +263,8 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                         e.printStackTrace();
                     }
                 }
-                // 5.开始预览 start preview
-                mCamera.startPreview();
-                // 6.防止连续对焦不生效
-                mCamera.cancelAutoFocus();
-                // 7.若不只支持FOCUS_MODE_CONTINUOUS_PICTURE模式则，调用autoFocus
-                if (mAutoFocus && !mSupportFocusModeContinuousPicture) {
-                    // 走手动定期调用对焦实现
-                    this.postDelayed(() -> {
-                        scheduleAutoFocus();
-                    }, 1000);
-                }
 
-                // 8.设置预览回调
+                // 5.设置预览回调
                 // 计算当前预览模式下接收预览图片byte[]的大小
                 Camera.Parameters parameters = mCamera.getParameters();
                 int previewWidth = parameters.getPreviewSize().width;
@@ -292,6 +281,18 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
                     // 回收缓存
                     mCamera.addCallbackBuffer(data);
                 });
+
+                // 6.开始预览 start preview
+                mCamera.startPreview();
+                // 7.防止连续对焦不生效
+                mCamera.cancelAutoFocus();
+                // 8.若不只支持FOCUS_MODE_CONTINUOUS_PICTURE模式则，调用autoFocus
+                if (mAutoFocus && !mSupportFocusModeContinuousPicture) {
+                    // 走手动定期调用对焦实现
+                    this.postDelayed(() -> {
+                        scheduleAutoFocus();
+                    }, 1000);
+                }
 
             } catch (Exception e) {
                 Log.d(TAG, "Error starting camera preview: " + e.getMessage());
