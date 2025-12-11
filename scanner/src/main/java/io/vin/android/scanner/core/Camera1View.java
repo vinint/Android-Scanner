@@ -690,14 +690,14 @@ public class Camera1View extends SurfaceView implements SurfaceHolder.Callback {
 
     // 是否支持扫码场景（Barcode/QR code）优化相机设置
     private boolean supportSceneModeBarcode(Camera camera){
-        try {
-            Camera.Parameters parameters = camera.getParameters();
-            if (parameters.getSupportedSceneModes() != null && parameters.getSupportedSceneModes().contains(Camera.Parameters.SCENE_MODE_BARCODE)) {
-                return true;
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        // try {
+        //     Camera.Parameters parameters = camera.getParameters();
+        //     if (parameters.getSupportedSceneModes() != null && parameters.getSupportedSceneModes().contains(Camera.Parameters.SCENE_MODE_BARCODE)) {
+        //         return true;
+        //     }
+        // }catch (Exception e){
+        //     e.printStackTrace();
+        // }
         return false;
     }
 
